@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="test_main_true">true</bool>
+    <bool name="test_main_false">false</bool>
+    <bool name="test_sub_true">true</bool>
+    <bool name="test_sub_false">false</bool>
+</resources>

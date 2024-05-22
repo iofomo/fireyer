@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.ifma.cmpt.demo.fireyer">
+
+    <instrumentation android:label="Tests for ${applicationId}"
+        android:name="androidx.test.runner.AndroidJUnitRunner"
+        android:targetPackage="${applicationId}"
+        android:handleProfiling="false"
+        android:functionalTest="false"
+        />
+
+    <permission android:name="com.ifma.cmpt.demo.permission" />
+    <permission android:name="com.ifma.cmpt.demo.readPermission" />
+    <permission android:name="com.ifma.cmpt.demo.writePermission" />
+    <uses-permission android:name="com.ifma.cmpt.demo.permission" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <queries>
+        <package android:name="com.demo" />
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:name="com.ifma.cmpt.demo.FakeApplication"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppBaseTheme"
+        android:appComponentFactory="com.ifma.cmpt.demo.DemoComponentFactory"
+        tools:replace="android:appComponentFactory"
+        >
+        <uses-library android:name="android.test.runner"/>
+
+        <!-- main process -->
+        <activity android:name="com.ifma.cmpt.demo.main.MainActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true"
+            >
+            <intent-filter android:label="@string/test_main_filter">
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+
+            <meta-data android:name="test_main_value" android:value="test_main_value" />
+            <meta-data android:name="test_main_string" android:resource="@string/test_main_string" />
+            <meta-data android:name="test_main_true" android:resource="@bool/test_main_true" />
+            <meta-data android:name="test_main_false" android:resource="@bool/test_main_false" />
+            <meta-data android:name="test_main_int1" android:resource="@integer/test_main_int1" />
+            <meta-data android:name="test_main_int2" android:resource="@integer/test_main_int2" />
+        </activity>
+
+        <service android:name="com.ifma.cmpt.demo.main.MainService" android:exported="true" >
+            <meta-data android:name="test_main_value" android:value="test_main_value" />
+            <meta-data android:name="test_main_string" android:resource="@string/test_main_string" />
+            <meta-data android:name="test_main_true" android:resource="@bool/test_main_true" />
+            <meta-data android:name="test_main_false" android:resource="@bool/test_main_false" />
+            <meta-data android:name="test_main_int1" android:resource="@integer/test_main_int1" />
+            <meta-data android:name="test_main_int2" android:resource="@integer/test_main_int2" />
+        </service>
+
+        <provider android:name="com.ifma.cmpt.demo.main.MainProvider"
+            android:authorities="${applicationId}.MainProvider"
+            android:exported="true"
+            >
+            <meta-data android:name="test_main_value" android:value="test_main_value" />
+            <meta-data android:name="test_main_string" android:resource="@string/test_main_string" />
+            <meta-data android:name="test_main_true" android:resource="@bool/test_main_true" />
+            <meta-data android:name="test_main_false" android:resource="@bool/test_main_false" />
+            <meta-data android:name="test_main_int1" android:resource="@integer/test_main_int1" />
+            <meta-data android:name="test_main_int2" android:resource="@integer/test_main_int2" />
+        </provider>
+
+        <receiver android:name="com.ifma.cmpt.demo.main.MainReceiver"
+            android:exported="false"
+            >
+            <meta-data android:name="test_main_value" android:value="test_main_value" />
+            <meta-data android:name="test_main_string" android:resource="@string/test_main_string" />
+            <meta-data android:name="test_main_true" android:resource="@bool/test_main_true" />
+            <meta-data android:name="test_main_false" android:resource="@bool/test_main_false" />
+            <meta-data android:name="test_main_int1" android:resource="@integer/test_main_int1" />
+            <meta-data android:name="test_main_int2" android:resource="@integer/test_main_int2" />
+        </receiver>
+
+        <activity android:name="com.ifma.cmpt.demo.main.ConsoleActivity"
+            android:theme="@style/AppDarkTheme"
+            android:exported="true"
+            />
+
+        <service android:name="com.ifma.cmpt.demo.sub.SubService"
+            android:exported="false"
+            android:process=":Sub"
+            >
+            <meta-data android:name="test_sub_value" android:value="test_sub_value" />
+            <meta-data android:name="test_sub_string" android:resource="@string/test_sub_string" />
+            <meta-data android:name="test_sub_true" android:resource="@bool/test_sub_true" />
+            <meta-data android:name="test_sub_false" android:resource="@bool/test_sub_false" />
+            <meta-data android:name="test_sub_int1" android:resource="@integer/test_sub_int1" />
+            <meta-data android:name="test_sub_int2" android:resource="@integer/test_sub_int2" />
+        </service>
+
+        <activity android:name="com.ifma.cmpt.demo.sub.SubActivity"
+            android:exported="false"
+            android:label="@string/test_sub_label"
+            android:icon="@drawable/activity"
+            android:process=":Sub"
+            android:taskAffinity=".tasktest"
+            >
+            <intent-filter android:label="@string/test_sub_filter" >
+                <action android:name="com.ifma.cmpt.demo.sub.Action"></action>
+            </intent-filter>
+            <meta-data android:name="test_sub_value" android:value="test_sub_value" />
+            <meta-data android:name="test_sub_string" android:resource="@string/test_sub_string" />
+            <meta-data android:name="test_sub_true" android:resource="@bool/test_sub_true" />
+            <meta-data android:name="test_sub_false" android:resource="@bool/test_sub_false" />
+            <meta-data android:name="test_sub_int1" android:resource="@integer/test_sub_int1" />
+            <meta-data android:name="test_sub_int2" android:resource="@integer/test_sub_int2" />
+        </activity>
+
+        <activity android:name="com.ifma.cmpt.demo.sub.DocumentReceiverActivity"
+            android:exported="true"
+            android:process=":Sub"
+            android:taskAffinity=":fireyerdoc"
+            >
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+                <data android:mimeType="application/msword" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                <data android:mimeType="application/vnd.ms-powerpoint" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.presentationml.presentation" />
+            </intent-filter>
+        </activity>
+
+        <provider android:name="com.ifma.cmpt.demo.sub.SubProvider"
+            android:authorities="${applicationId}.SubProvider"
+            android:exported="false"
+            android:process=":Sub"
+            android:grantUriPermissions="true"
+            >
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/test_provider"/>
+        </provider>
+
+        <provider android:name="com.ifma.cmpt.demo.sub.SubPermissionProvider"
+            android:authorities="${applicationId}.SubPermissionProvider"
+            android:exported="false"
+            android:process=":Sub"
+            android:readPermission="com.ifma.cmpt.demo.readPermission"
+            android:writePermission="com.ifma.cmpt.demo.writePermission"
+            >
+        </provider>
+
+        <receiver android:name="com.ifma.cmpt.demo.sub.SubReceiver"
+            android:exported="true"
+            android:process=".subrcv"
+            />
+
+        <meta-data android:name="test_main_value" android:value="test_main_value" />
+        <meta-data android:name="test_main_string" android:resource="@string/test_main_string" />
+        <meta-data android:name="test_main_true" android:resource="@bool/test_main_true" />
+        <meta-data android:name="test_main_false" android:resource="@bool/test_main_false" />
+        <meta-data android:name="test_main_int1" android:resource="@integer/test_main_int1" />
+        <meta-data android:name="test_main_int2" android:resource="@integer/test_main_int2" />
+        <meta-data android:name="test_sub_value" android:value="test_sub_value" />
+        <meta-data android:name="test_sub_string" android:resource="@string/test_sub_string" />
+        <meta-data android:name="test_sub_true" android:resource="@bool/test_sub_true" />
+        <meta-data android:name="test_sub_false" android:resource="@bool/test_sub_false" />
+        <meta-data android:name="test_sub_int1" android:resource="@integer/test_sub_int1" />
+        <meta-data android:name="test_sub_int2" android:resource="@integer/test_sub_int2" />
+    </application>
+
+</manifest>

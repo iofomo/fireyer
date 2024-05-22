@@ -1,0 +1,11 @@
+{
+    "mvn": [
+        {
+            "groupId": "com.iofomo.android",
+            "artifactId": "cmpt-fireyer",
+            "version": "1.0.0",
+            "file": "build/outputs/aar/cmpt-fireyer-release.aar",
+            "packaing": "aar"
+        }
+    ]
+}

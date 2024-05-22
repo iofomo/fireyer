@@ -1,0 +1,90 @@
+apply plugin: 'com.android.application'
+apply from: '../files/default.gradle'
+
+android {
+    def globalConfig = rootProject.extensions.getByName("ext")
+    buildToolsVersion globalConfig.getAt("androidBuildToolsVersion")
+    compileSdkVersion globalConfig.getAt("androidCompileSdkVersion")
+
+    defaultConfig {
+        applicationId "com.ifma.cmpt.demo.fireyer"
+        minSdkVersion globalConfig.getAt("androidMinSdkVersion")
+        targetSdkVersion globalConfig.getAt("androidTargetSdkVersion")
+        versionCode 2 // used in FireyerPackageCase.doCheckApplication(...)
+        versionName "1.0.2" // used in FireyerPackageCase.doCheckApplication(...)
+
+        testInstrumentationRunner globalConfig.getAt("testInstrumentationRunner")
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                includeCompileClasspath = true
+            }
+        }
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a"
+        }
+    }
+
+    sourceSets {
+        main {
+            assets.srcDirs = ['assets']
+            jniLibs.srcDirs = ['lib']
+            aidl.srcDirs = ['src/main/aidl']
+        }
+    }
+
+    signingConfigs {
+        debug {
+            storeFile file('../files/fireyer.keystore')
+            storePassword 'e99c85dc41111f82f7c3290fc87c42bd'
+            keyAlias 'ifmafireyer'
+            keyPassword 'e99c85dc41111f82f7c3290fc87c42bd'
+        }
+        release {
+            storeFile file('../files/fireyer.keystore')
+            storePassword 'e99c85dc41111f82f7c3290fc87c42bd'
+            keyAlias 'ifmafireyer'
+            keyPassword 'e99c85dc41111f82f7c3290fc87c42bd'
+        }
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+            jniDebuggable true
+            signingConfig signingConfigs.debug
+        }
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+//            proguardFiles getDefaultProguardFile('proguard-android.txt'), '../proguard-rules.pro'
+//            consumerProguardFiles '../proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+repositories {
+    flatDir {
+        dirs '../libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+
+    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+
+    // add module depend
+    implementation project(':cmpt-fireyer')
+
+    // add maven depend
+    implementation (name: 'cmpt-utils', ext: 'aar')
+    implementation (name: 'cmpt-testin', ext: 'aar')
+}

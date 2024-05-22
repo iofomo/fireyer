@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="test_main_int1">1</integer>
+    <integer name="test_main_int2">2</integer>
+
+    <integer name="test_sub_int1">10</integer>
+    <integer name="test_sub_int2">20</integer>
+</resources>
