@@ -1,6 +1,6 @@
 <p align="center">
   <a href="#">
-    <img alt="wing" src="img/1.png" width="76" />
+    <img alt="Fireyer" src="img/1.png" width="76" />
   </a>
 </p>
 
