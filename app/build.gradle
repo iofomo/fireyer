@@ -10,8 +10,8 @@ android {
         applicationId "com.ifma.cmpt.demo.fireyer"
         minSdkVersion globalConfig.getAt("androidMinSdkVersion")
         targetSdkVersion globalConfig.getAt("androidTargetSdkVersion")
-        versionCode 2 // used in FireyerPackageCase.doCheckApplication(...)
-        versionName "1.0.2" // used in FireyerPackageCase.doCheckApplication(...)
+        versionCode 3 // used in FireyerPackageCase.doCheckApplication(...)
+        versionName "1.0.3" // used in FireyerPackageCase.doCheckApplication(...)
 
         testInstrumentationRunner globalConfig.getAt("testInstrumentationRunner")
 
