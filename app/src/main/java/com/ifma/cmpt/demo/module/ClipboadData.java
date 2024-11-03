@@ -23,6 +23,7 @@ public class ClipboadData {
     public static final int TYPE_InstantiateProvider            = 10;
     public static final int TYPE_Source_APK                     = 11;
     public static final int TYPE_Package_Info                   = 12;
+    public static final int TYPE_Usb_Info                       = 13;
 
     private static final String PRE = "tst:";
     private static final Map<Integer, List<String>> sCache = new HashMap<>();
@@ -57,10 +58,10 @@ public class ClipboadData {
         writeToClipboard(ctx, sb.toString());
     }
 
-    public static void loadFromClipboard(Context ctx) {
+    public static int loadFromClipboard(Context ctx) {
         sCache.clear();
         String s = readFromClipboard(ctx);
-        if (TextUtils.isEmpty(s) || !s.startsWith(PRE)) return;
+        if (TextUtils.isEmpty(s) || !s.startsWith(PRE)) return 0;
 
         s = s.substring(PRE.length());
         String[] lines = s.split("\n");
@@ -84,6 +85,7 @@ public class ClipboadData {
         if (0 < lastKey && 0 < ss.size()) {
             sCache.put(lastKey, ss);
         }
+        return sCache.size();
     }
 
     private static void writeToClipboard(Context ctx, String text) {

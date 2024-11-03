@@ -15,6 +15,12 @@
     <permission android:name="com.ifma.cmpt.demo.writePermission" />
     <uses-permission android:name="com.ifma.cmpt.demo.permission" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <uses-permission android:name="android.permission.USB_PERMISSION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-feature android:name="android.hardware.usb.accessory" />
+    <uses-feature android:name="android.hardware.usb.host" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 
     <queries>
         <package android:name="com.demo" />
@@ -35,6 +41,7 @@
         <activity android:name="com.ifma.cmpt.demo.main.MainActivity"
             android:theme="@style/AppTheme"
             android:exported="true"
+            android:screenOrientation="portrait"
             >
             <intent-filter android:label="@string/test_main_filter">
                 <action android:name="android.intent.action.MAIN"/>
@@ -71,6 +78,31 @@
             <meta-data android:name="test_main_int2" android:resource="@integer/test_main_int2" />
         </provider>
 
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:exported="false"
+            android:authorities="${applicationId}.startup"
+            tools:replace="android:authorities"
+            >
+
+<!--            <meta-data-->
+<!--                android:name="androidx.work.WorkManagerInitializer"-->
+<!--                android:value="androidx.startup" />-->
+
+<!--            <meta-data-->
+<!--                android:name="androidx.emoji2.text.EmojiCompatInitializer"-->
+<!--                android:value="androidx.startup" />-->
+
+<!--            <meta-data-->
+<!--                android:name="androidx.lifecycle.ProcessLifecycleInitializer"-->
+<!--                android:value="androidx.startup" />-->
+
+<!--            <meta-data-->
+<!--                android:name="androidx.profileinstaller.ProfileInstallerInitializer"-->
+<!--                android:value="androidx.startup" />-->
+        </provider>
+
+
         <receiver android:name="com.ifma.cmpt.demo.main.MainReceiver"
             android:exported="false"
             >
@@ -85,6 +117,7 @@
         <activity android:name="com.ifma.cmpt.demo.main.ConsoleActivity"
             android:theme="@style/AppDarkTheme"
             android:exported="true"
+            android:screenOrientation="portrait"
             />
 
         <service android:name="com.ifma.cmpt.demo.sub.SubService"
@@ -105,6 +138,7 @@
             android:icon="@drawable/activity"
             android:process=":Sub"
             android:taskAffinity=".tasktest"
+            android:screenOrientation="portrait"
             >
             <intent-filter android:label="@string/test_sub_filter" >
                 <action android:name="com.ifma.cmpt.demo.sub.Action"></action>
@@ -121,6 +155,7 @@
             android:exported="true"
             android:process=":Sub"
             android:taskAffinity=":fireyerdoc"
+            android:screenOrientation="portrait"
             >
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -157,6 +192,14 @@
             android:process=".subrcv"
             />
 
+        <provider android:name="com.ifma.cmpt.demo.sub.SingleProvider"
+            android:authorities="${applicationId}.SingleProvider"
+            android:exported="false"
+            android:process=":Single"
+            android:grantUriPermissions="true"
+            >
+        </provider>
+
         <meta-data android:name="test_main_value" android:value="test_main_value" />
         <meta-data android:name="test_main_string" android:resource="@string/test_main_string" />
         <meta-data android:name="test_main_true" android:resource="@bool/test_main_true" />
@@ -169,6 +212,7 @@
         <meta-data android:name="test_sub_false" android:resource="@bool/test_sub_false" />
         <meta-data android:name="test_sub_int1" android:resource="@integer/test_sub_int1" />
         <meta-data android:name="test_sub_int2" android:resource="@integer/test_sub_int2" />
+        <meta-data android:name="test_res_raw" android:resource="@raw/testraw" />
     </application>
 
 </manifest>

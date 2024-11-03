@@ -11,6 +11,9 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.hardware.usb.UsbAccessory;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbManager;
 import android.media.AttributionSourceState;
 import android.media.AudioAttributesInternal;
 import android.media.AudioClient;
@@ -23,6 +26,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.Messenger;
 import android.os.RemoteException;
 import android.text.TextUtils;
 
@@ -42,8 +46,10 @@ import com.ifma.cmpt.utils.ShellUtils;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class FireyerRuntimeCase extends TstCaseBase implements Handler.Callback {
@@ -65,7 +71,13 @@ public class FireyerRuntimeCase extends TstCaseBase implements Handler.Callback 
         TstRunner.print("cmdline", TextUtils.equals(pname.trim(), FireyerCaseConsts.PACKAGE_NAME));
 
         Set<FireyerManager.IdItem> items = FireyerManager.getOtherProcess(getContext());
-        TstRunner.print("process id", null == items);
+        boolean pass = null == items;
+        if (!pass && items.size() == 1) {
+            for (FireyerManager.IdItem item : items) {
+                pass = "getprop".equals(item.name);
+            }
+        }
+        TstRunner.print("process id", pass);
         if (null != items) {
             for (FireyerManager.IdItem item : items) {
                 TstRunner.print("process id: " + item.id + ", " + item.name);
@@ -136,16 +148,18 @@ public class FireyerRuntimeCase extends TstCaseBase implements Handler.Callback 
     }
 
     public void lastTestMaps() {
-        List<String> maps = FireyerManager.getOtherMapsLibs();
-        TstRunner.print("maps", null == maps);
+        List<String> maps = new ArrayList<>();
+        boolean succ = FireyerManager.getOtherMapsLibs(maps);
+        TstRunner.print("maps", succ);
         if (null != maps) {
             for (String map : maps) {
                 TstRunner.print(map);
             }
         }
 
-        maps = FireyerManager.getOtherMapsLibsBySVC();
-        TstRunner.print("maps svc", null == maps);
+        maps.clear();
+        succ = FireyerManager.getOtherMapsLibsBySVC(maps);
+        TstRunner.print("maps svc", succ);
         if (null != maps) {
             for (String map : maps) {
                 TstRunner.print(map);
@@ -184,6 +198,12 @@ public class FireyerRuntimeCase extends TstCaseBase implements Handler.Callback 
         TstRunner.print("local file or dir svc", null == FireyerManager.getOtherLocalFilesBySVC(getContext()));
     }
 
+    public void testSingleProvder() {
+        Uri uri = Uri.parse("content://com.ifma.cmpt.demo.fireyer.SingleProvider");
+        String typ = getContext().getContentResolver().getType(uri);
+        TstRunner.print("single pvd: " + typ, "single".equals(typ));
+    }
+
     public void testBinder() throws Throwable {
         TstRunner.print("binder", FireyerManager.checkBinder());
     }
@@ -197,7 +217,8 @@ public class FireyerRuntimeCase extends TstCaseBase implements Handler.Callback 
         TstRunner.print("application",
             FireyerManager.checkApplication(getContext(),
                 "com.ifma.cmpt.demo.DemoApplication",
-                "com.ifma.cmpt.demo.DemoComponentFactory"
+                "com.ifma.cmpt.demo.DemoComponentFactory",
+                FireyerCaseConsts.PACKAGE_NAME
             )
         );
         TstRunner.print("class loader", FireyerManager.checkClassLoader(getContext()));
@@ -206,7 +227,7 @@ public class FireyerRuntimeCase extends TstCaseBase implements Handler.Callback 
 
     private MessengerUtils.ClientMessenger mMainMessenger;
     private MessengerUtils.ClientMessenger mSubMessenger;
-    public void testService() {
+    public void testBindService() {
         if (null == mMainMessenger) {
             mMainMessenger = new MessengerUtils.ClientMessenger(this, TstHandler.getLooper());
         }
@@ -236,8 +257,42 @@ public class FireyerRuntimeCase extends TstCaseBase implements Handler.Callback 
         }
     }
 
+    public void testStartService() {
+        Intent intent = new Intent(getContext(), MainService.class);
+        intent.setPackage(getContext().getPackageName());
+        intent.setAction(getContext().getPackageName() + ".MainAction");
+        getContext().startService(intent);
+        TstRunner.print("Intent main packagename", TextUtils.equals(intent.getPackage(), FireyerCaseConsts.PACKAGE_NAME));
+        ComponentName cn = intent.getComponent();
+        TstRunner.print("Intent main cn packagename", TextUtils.equals(cn.getPackageName(), FireyerCaseConsts.PACKAGE_NAME));
+        TstRunner.print("Intent main cn class", TextUtils.equals(MainService.class.getName(), cn.getClassName()));
+
+        intent = new Intent(getContext(), SubService.class);
+        intent.setPackage(getContext().getPackageName());
+        intent.setAction(getContext().getPackageName() + ".SubAction");
+        getContext().startService(intent);
+        TstRunner.print("Intent sub packagename", TextUtils.equals(intent.getPackage(), FireyerCaseConsts.PACKAGE_NAME));
+        cn = intent.getComponent();
+        TstRunner.print("Intent sub cn packagename", TextUtils.equals(cn.getPackageName(), FireyerCaseConsts.PACKAGE_NAME));
+        TstRunner.print("Intent sub cn class", TextUtils.equals(SubService.class.getName(), cn.getClassName()));
+    }
+
     private ServiceConnection mMainConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
+            TstRunner.print("Main ServiceConnected", TextUtils.equals(className.getPackageName(), FireyerCaseConsts.PACKAGE_NAME) &&
+                    TextUtils.equals(className.getClassName(), MainService.class.getName())
+                    );
+            try {
+                Messenger messenger = new Messenger(service);
+                Message message = new Message();
+                Intent i = new Intent();
+                i.setComponent(className);
+                message.getData().putParcelable("intent", i);
+                messenger.send(message);
+            } catch (Throwable th) {
+                TstRunner.print("ServiceConnected exception", false);
+                th.printStackTrace();
+            }
             mMainMessenger.setServiceBinder(service);
             doSendMainMessage();
         }
@@ -249,6 +304,9 @@ public class FireyerRuntimeCase extends TstCaseBase implements Handler.Callback 
 
     private ServiceConnection mSubConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
+            TstRunner.print("Sub ServiceConnected", TextUtils.equals(className.getPackageName(), FireyerCaseConsts.PACKAGE_NAME) &&
+                    TextUtils.equals(className.getClassName(), SubService.class.getName())
+            );
             mSubMessenger.setServiceBinder(service);
             doSendSubMessage();
         }
@@ -317,6 +375,9 @@ public class FireyerRuntimeCase extends TstCaseBase implements Handler.Callback 
     static int sBinderTestResult = -100;
     private ServiceConnection mBinderConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
+            TstRunner.print("Binder ServiceConnected", TextUtils.equals(className.getPackageName(), FireyerCaseConsts.PACKAGE_NAME) &&
+                    TextUtils.equals(className.getClassName(), SubService.class.getName())
+            );
             mBinderTest = IBinderTest.Stub.asInterface(service);
             testBinderCall();
         }
@@ -411,24 +472,144 @@ public class FireyerRuntimeCase extends TstCaseBase implements Handler.Callback 
             TstRunner.print("Execve: create file 1", f.isFile());
             TstRunner.print("Execve: create file 2", new File("/data/data/com.ifma.cmpt.demo.fireyer/" + f.getName()).isFile());
 
+            String result;
             ShellUtils.ShellResult sr = ShellUtils.execute("ls " + f.getParent());
-            String result = sr.getOutput();
-            TstRunner.print("Execve: ls 1", 0 < result.indexOf(fileName));
+            if (null != sr) {
+                result = sr.getOutput();
+                TstRunner.print("out: " + result);
+                if (sr.hasErrput()) {
+                    TstRunner.print("err: " + sr.getErrput());
+                }
+                TstRunner.print("Execve: ls 1", 0 < result.indexOf(fileName));
+            } else {
+                TstRunner.print("Execve: ls 1 failed", false);
+            }
 
             sr = ShellUtils.execute("ls " + "/data/data/com.ifma.cmpt.demo.fireyer/");
-            result = sr.getOutput();
-            TstRunner.print("Execve: ls 2", 0 < result.indexOf(fileName));
+            if (null != sr) {
+                result = sr.getOutput();
+                TstRunner.print("out: " + result);
+                if (sr.hasErrput()) {
+                    TstRunner.print("err: " + sr.getErrput());
+                }
+                TstRunner.print("Execve: ls 2", 0 < result.indexOf(fileName));
+            } else {
+                TstRunner.print("Execve: ls 2 failed", false);
+            }
 
             sr = ShellUtils.execute("mv " + f.getAbsolutePath() + " " + f.getAbsolutePath() + "-abc");
-            if (sr.hasErrput()) Logger.e(TAG, sr.getErrput());
-            if (sr.hasOutput()) Logger.e(TAG, sr.getOutput());
+            if (null != sr) {
+                if (sr.hasErrput()) Logger.e(TAG, sr.getErrput());
+                if (sr.hasOutput()) Logger.e(TAG, sr.getOutput());
+            } else {
+                TstRunner.print("Execve: mv failed", false);
+            }
 
             sr = ShellUtils.execute("ls " + "/data/data/com.ifma.cmpt.demo.fireyer/");
-            result = sr.getOutput();
-            TstRunner.print("Execve: ls 3", 0 < result.indexOf(fileName + "-abc"));
+            if (null != sr) {
+                result = sr.getOutput();
+                TstRunner.print("out: " + result);
+                if (sr.hasErrput()) {
+                    TstRunner.print("err: " + sr.getErrput());
+                }
+                TstRunner.print("Execve: ls 3", 0 < result.indexOf(fileName + "-abc"));
+            } else {
+                TstRunner.print("Execve: ls 3 failed", false);
+            }
         } catch (Throwable e) {
             TstRunner.print("Execve: " + e.getMessage(), false);
             e.printStackTrace();
+        }
+    }
+
+    public void testUsb() {
+        List<String> infos = new ArrayList<>();
+        UsbManager mgr = (UsbManager)getContext().getSystemService(Context.USB_SERVICE);
+        HashMap<String, UsbDevice> map = mgr.getDeviceList();
+        TstRunner.print("Usb dev: " + (null == map ? "null": map.size()));
+        if (null != map) {
+            for (Map.Entry<String, UsbDevice> entry: map.entrySet()) {
+                try {
+                    String info = "dev: " + entry.getKey() + ": " + entry.getValue().getSerialNumber();
+                    TstRunner.print(info);
+                    infos.add(info);
+                } catch (Throwable e) {
+                    TstRunner.print(e.getMessage());
+                }
+            }
+        }
+        UsbAccessory[] accs = mgr.getAccessoryList();
+        TstRunner.print("Usb acc: " + (null == accs ? "null": accs.length));
+        if (null != accs) {
+            for (UsbAccessory acc : accs) {
+                try {
+                    String info = "acc: " + acc.getSerial();
+                    TstRunner.print(info);
+                    infos.add(info);
+                } catch (Throwable e) {
+                    TstRunner.print(e.getMessage());
+                }
+            }
+        }
+        if (FireyerCaseConsts.isVirtualMode()) {
+            List<String> val = ClipboadData.get(ClipboadData.TYPE_Usb_Info);
+            TstRunner.print("usb info ", doCompareList(val, infos));
+        } else {
+            ClipboadData.set(ClipboadData.TYPE_Usb_Info, infos);
+        }
+    }
+
+    private boolean doCompareList(List<String> src, List<String> des) {
+        if (null == src) return null == des || 0 == des.size();
+        if (null == des) return 0 == src.size();
+
+        int len = src.size() < des.size() ? src.size() : des.size();
+        for (int i = 0; i<len; ++i) {
+            if (!TextUtils.equals(src.get(i), des.get(i))) {
+                TstRunner.print(src.get(i) + " != " + des.get(i), false);
+            }
+        }
+        if (src.size() < des.size()) {
+            for (; len < des.size(); ++len) {
+                TstRunner.print("more info: " + des.get(len), false);
+            }
+        } else if (src.size() > des.size()) {
+            for (; len < src.size(); ++len) {
+                TstRunner.print("miss info: " + src.get(len), false);
+            }
+        }
+        return src.size() == des.size();
+    }
+
+    public void testGetprop() {
+        try {
+            ShellUtils.ShellResult sr = ShellUtils.execute("getprop ro.debuggable");
+            String out = sr.getOutput().trim();
+            String err = sr.getErrput().trim();
+            if (!TextUtils.isEmpty(err)) {
+                TstRunner.print("getprop dbg err: " + err, false);
+            }
+            TstRunner.print("getprop dbg: " + out, TextUtils.equals(out, "0"));
+        } catch (Throwable e) {
+            e.printStackTrace();
+            TstRunner.print("getprop except: " + e.getMessage(), false);
+        }
+    }
+
+    public void testCmd() {
+        try {
+            ShellUtils.ShellResult sr = ShellUtils.execute("ls -a /data/data/" + FireyerCaseConsts.PACKAGE_NAME);
+            String[] lines = sr.getOutput().split("\n");
+            for (String line : lines) {
+                line = line.trim();
+                if (TextUtils.isEmpty(line) || line.equals(".") || line.equals("..")) continue;
+                if (line.startsWith(".")) {
+                    TstRunner.print("found hide: " + line, false);
+                }
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+            TstRunner.print("cmd except: " + e.getMessage(), false);
         }
     }
 }

@@ -68,7 +68,9 @@ public class DemoComponentFactory extends AppComponentFactory {
         FireyerRuntimeCase.sAppComponentFactoryInitProvider = true;
         TstRunner.print("instantiateProvider",
             TextUtils.equals("com.ifma.cmpt.demo.main.MainProvider", className) ||
-            TextUtils.equals("com.ifma.cmpt.demo.sub.SubProvider", className)
+            TextUtils.equals("com.ifma.cmpt.demo.sub.SubProvider", className) ||
+            TextUtils.equals("com.ifma.cmpt.demo.sub.SubPermissionProvider", className) ||
+            TextUtils.equals("androidx.startup.InitializationProvider", className)
         );
         FireyerStackCase.dumpStackForInstantiateProvider();
         return (ContentProvider) cl.loadClass(className).newInstance();

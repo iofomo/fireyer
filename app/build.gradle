@@ -80,9 +80,11 @@ dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.0.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation 'androidx.startup:startup-runtime:1.0.0'
 
     // add module depend
     implementation project(':cmpt-fireyer')
+    implementation project(':cmpt-cocollider')
 
     // add maven depend
     implementation (name: 'cmpt-utils', ext: 'aar')

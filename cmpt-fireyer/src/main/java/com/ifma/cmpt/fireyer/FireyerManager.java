@@ -2,6 +2,7 @@ package com.ifma.cmpt.fireyer;
 
 import android.app.ActivityManager;
 import android.app.AppComponentFactory;
+import android.app.Application;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.SigningInfo;
@@ -44,9 +45,24 @@ public class FireyerManager {
 
     public static boolean checkHiddenAPI() {
         do {
-            if (null == ActivityThreadUtils.createAppContext()) break;
+            if (null == ActivityThreadUtils.createAppContext(false)) break;
             // /frameworks/base/core/java/android/app/ActivityThread.java
             if (classFind("android.app.ActivityThread")) break;
+            try {
+                Method m = ReflectUtils.getDeclaredMethod("android.app.ActivityThread", "currentActivityThread");
+                if (null == m) break;
+            } catch (Throwable e) {
+                break;
+            }
+
+            // /android/app/Instrumentation.java
+            if (classFind("android.app.Instrumentation")) break;
+            try {
+                Method m = ReflectUtils.getDeclaredMethod("android.app.Instrumentation", "getFactory", String.class);
+                if (null == m) break;
+            } catch (Throwable e) {
+                break;
+            }
             // /libcore/dalvik/src/main/java/dalvik/system/DexPathList.java
             if (classFind("dalvik.system.DexPathList")) break;
             // /frameworks/base/core/java/android/app/LoadedApk.java
@@ -61,31 +77,31 @@ public class FireyerManager {
         return true;
     }
 
-    public static List<String> getOtherMapsLibsBySVC() {
+    public static boolean getOtherMapsLibsBySVC(List<String> maps) {
         String fname = "/proc/" + android.os.Process.myPid() + "/maps";
         String s = FireyerUtils.readFile(fname, true);
-        return getMapsLibs(s, "svc");
+        return getMapsLibs(s, "svc", maps);
     }
 
-    public static List<String> getOtherMapsLibs() {
+    public static boolean getOtherMapsLibs(List<String> maps) {
         String fname = "/proc/" + android.os.Process.myPid() + "/maps";
         String s = FileUtils.readFile(fname);
-        return getMapsLibs(s, "lib");
+        return getMapsLibs(s, "lib", maps);
     }
 
-    private static List<String> getMapsLibs(String s, String tag) {
-        if (TextUtils.isEmpty(s)) return null;
-        List<String> libs = new ArrayList<>();
+    private static boolean getMapsLibs(String s, String tag, List<String> libs) {
+        if (TextUtils.isEmpty(s)) return false;
         String[] lines = s.split("\n");
+        if (lines.length < 10) return false;
         for (String line : lines) {
-            android.util.Log.e(tag + " maps: ", line);
+            Logger.e(tag + " maps: ", line);
             if (0 < line.indexOf("/data/data/")) {
                 libs.add(line);
             } else if (0 < line.indexOf("/data/user/")) {
                 libs.add(line);
             }
         }
-        return libs.isEmpty() ? null : libs;
+        return libs.isEmpty();
     }
 
     public static class IdItem {
@@ -130,7 +146,7 @@ public class FireyerManager {
         if (null != pp) {
             for (int p : pp) {
                 if (pid == p) continue;
-                set.add(new IdItem(p, FireyerUtils.getProceName(pid)));
+                set.add(new IdItem(p, FireyerUtils.getProceName(p)));
             }
         }
         return set.isEmpty() ? null : set;
@@ -247,10 +263,10 @@ public class FireyerManager {
         return true;
     }
 
-    public static boolean checkApplication(Context ctx, String appClass, String appFacClass) throws Throwable {
+    public static boolean checkApplication(Context ctx, String appClass, String appFacClass, String pkgName) throws Throwable {
         Class<?> cls = Class.forName("android.app.ActivityThread");
         Object objAT = ReflectUtils.getStaticFieldValue(cls, "sCurrentActivityThread");
-        Object app = ReflectUtils.getFieldValue(objAT, "mInitialApplication");
+        Application app = (Application)ReflectUtils.getFieldValue(objAT, "mInitialApplication");
         if (!TextUtils.equals(app.getClass().getName(), appClass)) {
             Logger.e(TAG, "mInitialApplication: " + app.getClass().getName());
             return false;
@@ -262,6 +278,36 @@ public class FireyerManager {
         if (!TextUtils.equals(acf.getClass().getName(), appFacClass)) {
             Logger.e(TAG, "mInstrumentation::getFactory: " + acf.getClass().getName());
             return false;
+        }
+
+        String pkg;
+        Logger.e(TAG, "ctx: " + ctx.getClass().getName());
+        if (ctx.getClass().getName().endsWith("ContextImpl")) {
+            pkg = (String) ReflectUtils.getFieldValue(ctx, "mBasePackageName");
+            if (!TextUtils.equals(pkg, pkgName)) {
+                Logger.e(TAG, "Context::mBasePackageName fail: " + pkg);
+                return false;
+            }
+            pkg = (String) ReflectUtils.getFieldValue(ctx, "mOpPackageName");
+            if (!TextUtils.equals(pkg, pkgName)) {
+                Logger.e(TAG, "Context::mOpPackageName fail: " + pkg);
+                return false;
+            }
+        }
+
+        Context c = app.getBaseContext();
+        Logger.e(TAG, "app ctx: " + c.getClass().getName());
+        if (c.getClass().getName().endsWith("ContextImpl")) {
+            pkg = (String) ReflectUtils.getFieldValue(c, "mBasePackageName");
+            if (!TextUtils.equals(pkg, pkgName)) {
+                Logger.e(TAG, "BaseContext::mBasePackageName fail: " + pkg);
+                return false;
+            }
+            pkg = (String) ReflectUtils.getFieldValue(c, "mOpPackageName");
+            if (!TextUtils.equals(pkg, pkgName)) {
+                Logger.e(TAG, "BaseContext::mOpPackageName fail: " + pkg);
+                return false;
+            }
         }
 
         return true;
@@ -369,4 +415,19 @@ public class FireyerManager {
         StatInfo info = getStat(fileName);
         return null != info ? info.size : 0L;
     }
+
+    public static String getPropByPopen(String propName){
+        return (String) FireyerNative.callNative(FireyerNative.TYPE_GET_PROP_POPEN ,propName);
+    }
+
+    //__system_property_get
+    public static String getPropBySPG(String propName){
+        return (String) FireyerNative.callNative(FireyerNative.TYPE_GET_PROP_SPG ,propName);
+    }
+
+    //__system_property_read_callback
+    public static String getPropBySPRC(String propName){
+        return (String) FireyerNative.callNative(FireyerNative.TYPE_GET_PROP_SPRC ,propName);
+    }
+
 }

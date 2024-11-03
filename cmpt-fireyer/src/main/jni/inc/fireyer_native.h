@@ -8,6 +8,9 @@ enum {
     TYPE_GET_PROC = 2,
     TYPE_FILE_LIST = 3,
     TYPE_GET_STACK = 4,
+    TYPE_GET_PROP_POPEN   = 5,
+    TYPE_GET_PROP_SPG     = 6,
+    TYPE_GET_PROP_SPRC    = 7,
 };
 
 class FireyerNative {

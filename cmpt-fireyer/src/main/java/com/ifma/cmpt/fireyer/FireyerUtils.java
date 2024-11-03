@@ -4,6 +4,7 @@ import android.text.TextUtils;
 
 import com.ifma.cmpt.utils.CipherUtils;
 
+import java.io.Closeable;
 import java.io.File;
 import java.security.MessageDigest;
 
@@ -87,6 +88,23 @@ public class FireyerUtils {
 
     public static String getProceName(int pid) {
         String s = readFile("/proc/" + pid + "/cmdline", true);
-        return TextUtils.isEmpty(s) ? null : s.trim();
+        if (!TextUtils.isEmpty(s)) return s.trim();
+
+        s = readFile("/proc/" + pid + "/status", true);
+        String[] items = s.split("\n");
+        for (String line : items) {
+            if (line.startsWith("Name:")) {
+                return line.substring(5).trim();
+            }
+        }
+        return null;
+    }
+
+    public static void closeQuietly(Closeable closeable){
+        if (closeable != null){
+            try {
+                closeable.close();
+            }catch (Throwable t){}
+        }
     }
 }

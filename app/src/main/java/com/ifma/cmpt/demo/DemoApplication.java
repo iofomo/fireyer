@@ -9,6 +9,7 @@ import com.ifma.cmpt.demo.test.FireyerRuntimeCase;
 import com.ifma.cmpt.demo.test.FireyerStackCase;
 import com.ifma.cmpt.fireyer.FireyerManager;
 import com.ifma.cmpt.testin.env.TstEnv;
+import com.ifma.cmpt.utils.ReflectUtils;
 
 public class DemoApplication extends Application {
     private final static String TAG = "DemoApplication";
@@ -23,8 +24,15 @@ public class DemoApplication extends Application {
         MainReceiver.register(base);
 //            dumpClassLoader(getClassLoader());
         LauncherMonitor.init();
+
+        clearServiceManager();
 //        TstClassPrinter.printStub("android.content.IContentProvider");
 //        TstClassPrinter.printStubByCodes("android.content.pm.IPackageManager", 179);
+    }
+
+    public static void clearServiceManager() {
+        Class<?> cls = ReflectUtils.findClass("android.os.ServiceManager");
+        ReflectUtils.setStaticFieldValue(cls, "sServiceManager", null);
     }
 
     @Override

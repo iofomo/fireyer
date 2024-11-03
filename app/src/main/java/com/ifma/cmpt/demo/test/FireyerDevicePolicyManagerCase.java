@@ -9,23 +9,25 @@ import com.ifma.cmpt.testin.module.TstRunner;
 
 import java.util.List;
 
+/**
+ * 设备管理器
+ */
 public class FireyerDevicePolicyManagerCase extends TstCaseBase {
 
     private static final String TARGET_COMPONENTNAME_PKG = "com.uusafe.frame.nut";
     private static final  String TARGET_COMPONENTNAME_CLS = "com.uusafe.root.policy.DeviceOwnerReceiver";
 
-    @Override
-    protected void tearDown() throws Exception {
+    public void testDeviceAdmin(){
         Context context = getContext();
         TstRunner.print("DeviceAdmin not found target" , isDeviceAdminFound(context));
         TstRunner.print("deviceAdminEnabled false" , !isDeviceAdminEnabled(context, new ComponentName(TARGET_COMPONENTNAME_PKG, TARGET_COMPONENTNAME_CLS)));
-
-        DevicePolicyManager dpm = (DevicePolicyManager) context.getSystemService(Context.DEVICE_POLICY_SERVICE);
-        TstRunner.print("isProfileOwnerApp check",!dpm.isProfileOwnerApp(TARGET_COMPONENTNAME_PKG));
-
-        super.tearDown();
     }
 
+    public void testProfile(){
+        Context context = getContext();
+        DevicePolicyManager dpm = (DevicePolicyManager) context.getSystemService(Context.DEVICE_POLICY_SERVICE);
+        TstRunner.print("isProfileOwnerApp check",!dpm.isProfileOwnerApp(TARGET_COMPONENTNAME_PKG));
+    }
 
     /**
      * 检查是否有任何设备管理服务被启用

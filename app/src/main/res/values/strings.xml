@@ -15,8 +15,8 @@
 
     <string name="title_console">控制台</string>
 
-    <string name="title_unittest_source">单元测试【原始环境】</string>
-    <string name="title_unittest_konker">单元测试【虚拟环境】</string>
+    <string name="title_unittest_source">单元测试【原包使用】</string>
+    <string name="title_unittest_konker">单元测试【分身使用】</string>
     <string name="title_xxx">XXX</string>
     <string name="title_shared">文件分享</string>
 

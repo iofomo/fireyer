@@ -12,8 +12,6 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
 
-import androidx.annotation.Nullable;
-
 public class MainService extends Service implements MessengerUtils.IServiceCallback {
     private static final String TAG = MainService.class.getSimpleName();
 
@@ -40,7 +38,6 @@ public class MainService extends Service implements MessengerUtils.IServiceCallb
         return outMessage;
     }
 
-    @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         return mMessenger.getBinder();
@@ -53,7 +50,7 @@ public class MainService extends Service implements MessengerUtils.IServiceCallb
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        TstLogger.bundle(TAG, intent.getExtras());
+        TstLogger.d(TAG, intent.toString());
         return START_NOT_STICKY;
     }
 }

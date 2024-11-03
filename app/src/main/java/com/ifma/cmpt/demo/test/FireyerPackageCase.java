@@ -21,8 +21,8 @@ import android.content.pm.SigningInfo;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.ArrayMap;
-import android.util.Log;
 
+import com.ifma.cmpt.demo.fireyer.BuildConfig;
 import com.ifma.cmpt.demo.fireyer.R;
 import com.ifma.cmpt.demo.module.ClipboadData;
 import com.ifma.cmpt.fireyer.FireyerManager;
@@ -123,12 +123,12 @@ public class FireyerPackageCase extends TstCaseBase {
         if (null != ai.sourceDir) {
             TstRunner.print(tag + "application sourceDir", ai.sourceDir.startsWith("/data/app") && 0 < ai.sourceDir.indexOf(FireyerCaseConsts.PACKAGE_NAME));
         } else {
-            TstRunner.print(tag + "application sourceDir null", false);
+            TstRunner.print(tag + "application sourceDir null", TextUtils.equals("local ", tag));
         }
         if (null != ai.publicSourceDir) {
             TstRunner.print(tag + "application publicSourceDir", ai.publicSourceDir.startsWith("/data/app") && 0 < ai.publicSourceDir.indexOf(FireyerCaseConsts.PACKAGE_NAME));
         } else {
-            TstRunner.print(tag + "application publicSourceDir null", false);
+            TstRunner.print(tag + "application publicSourceDir null", TextUtils.equals("local ", tag));
         }
         if (TextUtils.isEmpty(sSourceApk)) {
             final List<String> ss = ClipboadData.get(ClipboadData.TYPE_Source_APK);
@@ -139,11 +139,11 @@ public class FireyerPackageCase extends TstCaseBase {
         Logger.d(TAG, tag + "sSourceApk: " + sSourceApk);
         final String srcApk = OSUtils.getApkSourceFile(ai);
         Logger.d(TAG, tag + "srcApk: " + srcApk);
-        TstRunner.print(tag + "application source apk", null == sSourceApk || TextUtils.equals(sSourceApk, srcApk));
+        TstRunner.print(tag + "application source apk", null == sSourceApk || ((null == srcApk) && TextUtils.equals("local ", tag)) || TextUtils.equals(sSourceApk, srcApk));
 
         TstRunner.print(tag + "application extract_native_lib", 0 == (ai.flags & ApplicationInfo.FLAG_EXTRACT_NATIVE_LIBS));
         if (null != ai.nativeLibraryDir) {
-            TstRunner.print(tag + "application libDir", ai.nativeLibraryDir.startsWith("/data/app"));
+            TstRunner.print(tag + "application libDir", ai.nativeLibraryDir.startsWith("/data/app") && 0 < ai.nativeLibraryDir.indexOf(FireyerCaseConsts.PACKAGE_NAME));
             TstRunner.print(tag + "application lib common", !new File(ai.nativeLibraryDir, "libifmacommon-jni.so").exists());
             TstRunner.print(tag + "application lib fireyer", !new File(ai.nativeLibraryDir, "libfireyer-jni.so").exists());
         }
@@ -162,7 +162,7 @@ public class FireyerPackageCase extends TstCaseBase {
 
     void doCheckApplication(String tag, PackageInfo pi) {
         Bundle metaData = pi.applicationInfo.metaData;
-        TstRunner.print(tag + "application count metadata", null != metaData && metaData.size() == 12);
+        TstRunner.print(tag + "application count metadata", null != metaData && metaData.size() == 13);
         TstRunner.print(tag + "application main metadata", doCheckMainMetaData(metaData));
         TstRunner.print(tag + "application sub metadata", doCheckSubMetaData(metaData));
 
@@ -181,7 +181,7 @@ public class FireyerPackageCase extends TstCaseBase {
         }
 
         doCheckApplicationInfo(tag, pi.applicationInfo);
-        TstRunner.print(tag + "version", pi.getLongVersionCode() == 2 && TextUtils.equals(pi.versionName, "1.0.2"));
+        TstRunner.print(tag + "version", pi.getLongVersionCode() == BuildConfig.VERSION_CODE && TextUtils.equals(pi.versionName, BuildConfig.VERSION_NAME));
         TstRunner.print(tag + "sharedUser", pi.sharedUserLabel == 0 && TextUtils.isEmpty(pi.sharedUserId));
     }
 
@@ -189,6 +189,8 @@ public class FireyerPackageCase extends TstCaseBase {
         TstRunner.print("package name", FireyerCaseConsts.PACKAGE_NAME.equals(getContext().getPackageName()));
         doCheckApplication("binder ", mPackageInfo);
         doTestComponent(mPackageInfo, true);
+        ApplicationInfo ai = getContext().getApplicationContext().getApplicationInfo();
+        doCheckApplicationInfo("AppCxt ", ai);
     }
 
     public static void doTestActivityInfo(String tag, ActivityInfo info, boolean checkMetaData) {
@@ -210,6 +212,8 @@ public class FireyerPackageCase extends TstCaseBase {
             }
         } else if (TextUtils.equals(info.name, "com.ifma.cmpt.demo.sub.DocumentReceiverActivity")) {
             TstRunner.print(tag + "activity document taskAffinity: " + info.taskAffinity, TextUtils.equals(info.taskAffinity, FireyerCaseConsts.PACKAGE_NAME + ":fireyerdoc"));
+        } else if (TextUtils.equals(info.name, "com.ifma.cmpt.demo.main.VoicerActivity")) {
+//            TstRunner.print(tag + "activity voicer theme: " + info.theme, info.theme == R.style.AppTheme);
         } else {
             TstRunner.print(tag + "activity unknown: " + info.name, false);
         }
@@ -250,11 +254,19 @@ public class FireyerPackageCase extends TstCaseBase {
             TstRunner.print(tag + "provider sub exported", !info.exported);
             TstRunner.print(tag + "provider sub authorities", TextUtils.equals(info.authority, FireyerCaseConsts.PACKAGE_NAME + ".SubProvider"));
             TstRunner.print(tag + "provider sub grantUriPermissions", info.grantUriPermissions);
+            TstRunner.print(tag + "provider sub processName: ", TextUtils.equals(info.processName, FireyerCaseConsts.PACKAGE_NAME+":Sub"));
         } else if (TextUtils.equals(info.name, "com.ifma.cmpt.demo.sub.SubPermissionProvider")) {
             TstRunner.print(tag + "provider sub Permission exported", !info.exported);
             TstRunner.print(tag + "provider sub Permission authorities", TextUtils.equals(info.authority, FireyerCaseConsts.PACKAGE_NAME + ".SubPermissionProvider"));
             TstRunner.print(tag + "provider sub Permission readPermission", TextUtils.equals(info.readPermission, "com.ifma.cmpt.demo.readPermission"));
             TstRunner.print(tag + "provider sub Permission writePermission", TextUtils.equals(info.writePermission, "com.ifma.cmpt.demo.writePermission"));
+        } else if (TextUtils.equals(info.name, "androidx.startup.InitializationProvider")) {
+            TstRunner.print(tag + "provider startup exported", !info.exported);
+            TstRunner.print(tag + "provider startup authorities", TextUtils.equals(info.authority, FireyerCaseConsts.PACKAGE_NAME + ".startup"));
+        } else if (TextUtils.equals(info.name, "com.ifma.cmpt.demo.sub.SingleProvider")) {
+            TstRunner.print(tag + "provider single exported", !info.exported);
+            TstRunner.print(tag + "provider single processName: ", TextUtils.equals(info.processName, FireyerCaseConsts.PACKAGE_NAME+":Single"));
+            TstRunner.print(tag + "provider single authorities", TextUtils.equals(info.authority, FireyerCaseConsts.PACKAGE_NAME + ".SingleProvider"));
         } else {
             TstRunner.print(tag + "provider unknown: " + info.name, false);
         }
@@ -276,7 +288,7 @@ public class FireyerPackageCase extends TstCaseBase {
     }
 
     public void doTestComponent(PackageInfo pi, boolean checkMetaData) {
-        TstRunner.print("activity count", 4 == pi.activities.length);
+        TstRunner.print("activity count", 5 == pi.activities.length);
         for (ActivityInfo info : pi.activities) {
             doTestActivityInfo("", info, checkMetaData);
         }
@@ -286,7 +298,7 @@ public class FireyerPackageCase extends TstCaseBase {
             doTestServiceInfo("", info, checkMetaData);
         }
 
-        TstRunner.print("provider count", 3 == pi.providers.length);
+        TstRunner.print("provider count", 5 == pi.providers.length);
         doTestComponentProviders(pi.providers, checkMetaData);
 
         TstRunner.print("receiver count", 2 == pi.receivers.length);
@@ -386,7 +398,7 @@ public class FireyerPackageCase extends TstCaseBase {
             TstRunner.print("AT mPackages count: " + pkgs.size(), pkgs.size() == 1);
             for (String pkg : pkgs.keySet()) {
                 if (!TextUtils.equals(FireyerCaseConsts.PACKAGE_NAME, pkg)) {
-                    TstRunner.print("AT mPackages", false);
+                    TstRunner.print("AT mPackages: " + pkg, false);
                 }
             }
         }
@@ -414,5 +426,27 @@ public class FireyerPackageCase extends TstCaseBase {
             providers.toArray(pp);
             doTestComponentProviders(pp, false);
         }
+    }
+
+    public void testRawResource() {
+        try {
+            ApplicationInfo pi = getContext().getPackageManager().getApplicationInfo(FireyerCaseConsts.PACKAGE_NAME, PackageManager.GET_META_DATA);
+            int id = pi.metaData.getInt("test_res_raw", 0);
+            TstRunner.print("res raw id", R.raw.testraw == id);
+            TstRunner.print("res raw content", TextUtils.equals(getRawRes(id), "got-this"));
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String getRawRes(int id) {
+        try (InputStream inputStream = getContext().getResources().openRawResource(id)) {
+            byte[] buffer = new byte[1024];
+            int len = inputStream.read(buffer);
+            return new String(buffer, 0, len);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

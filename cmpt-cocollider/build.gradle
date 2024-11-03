@@ -1,0 +1,46 @@
+apply plugin: 'com.android.library'
+apply from: '../../../default.gradle'
+
+android {
+    def globalConfig = rootProject.extensions.getByName("ext")
+    buildToolsVersion globalConfig.getAt("androidBuildToolsVersion")
+    compileSdkVersion globalConfig.getAt("androidCompileSdkVersion")
+
+    defaultConfig {
+        minSdkVersion globalConfig.getAt("androidMinSdkVersion")
+        targetSdkVersion globalConfig.getAt("androidTargetSdkVersion")
+//        ndk {
+//            abiFilters "armeabi-v7a", "arm64-v8a"
+//        }
+    }
+
+//    externalNativeBuild {
+//        ndkBuild {
+//            path file('src/main/jni/Android.mk')
+//        }
+//    }
+
+    sourceSets {
+        main {
+            assets.srcDirs = ['assets']
+            jniLibs.srcDirs = ['src/main/libs']
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+repositories {
+    flatDir {
+        dirs '../../../out', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    debugImplementation (name: 'cmpt/common/debug/cmpt-utils', ext: 'aar')
+    releaseImplementation (name: 'cmpt/common/release/cmpt-utils', ext: 'aar')
+}

@@ -10,8 +10,6 @@ import android.os.Message;
 import android.os.RemoteException;
 import android.text.TextUtils;
 
-import androidx.annotation.Nullable;
-
 import com.ifma.cmpt.demo.IBinderTest;
 import com.ifma.cmpt.demo.IBinderTestCallback;
 import com.ifma.cmpt.demo.test.FireyerCaseConsts;
@@ -49,7 +47,6 @@ public class SubService extends Service implements MessengerUtils.IServiceCallba
         return outMessage;
     }
 
-    @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         if (TextUtils.equals(ACTION_BINDER, intent.getAction())) {
@@ -69,7 +66,7 @@ public class SubService extends Service implements MessengerUtils.IServiceCallba
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        TstLogger.bundle(TAG, intent.getExtras());
+        TstLogger.d(TAG, intent.toString());
         return START_NOT_STICKY;
     }
 

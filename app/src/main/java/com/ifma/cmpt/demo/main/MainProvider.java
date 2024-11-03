@@ -1,5 +1,6 @@
 package com.ifma.cmpt.demo.main;
 
+import com.ifma.cmpt.cocollider.CoColliderManager;
 import com.ifma.cmpt.demo.module.ClassDumper;
 import com.ifma.cmpt.demo.module.Consts;
 import com.ifma.cmpt.demo.module.PackageDumper;
@@ -20,6 +21,7 @@ public class MainProvider extends ContentProvider {
     public boolean onCreate() {
         FireyerStackCase.dumpStackForProvider_onCreate();
         TstLogger.e(TAG, "onCreate");
+        getContext().getExternalCacheDir();
         return false;
     }
 
@@ -62,6 +64,9 @@ public class MainProvider extends ContentProvider {
                     break;
                 case "method":// for test case
                     handleTestCaseEvent(authority, arg, extras, replyData);
+                    break;
+                case "coco":
+                    CoColliderManager.handleCallEvent(getContext(), extras, replyData);
                     break;
                 default: break;
             }

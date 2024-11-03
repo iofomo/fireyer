@@ -1,0 +1,11 @@
+{
+    "mvn": [
+        {
+            "groupId": "com.iofomo.android",
+            "artifactId": "cmpt-cocollider",
+            "version": "1.0.0",
+            "file": "build/outputs/aar/cmpt-cocollider-release.aar",
+            "packaing": "aar"
+        }
+    ]
+}

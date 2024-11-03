@@ -50,16 +50,18 @@ public class ClassDumper {
     private static final String TARGET_PRE = "target,";
     private static final String ONEWAY_PRE = "oneway,";
     public static int doParse(List<String> lines, String outPath, String mode) {
-//        target,android.graphicsenv.IGpuService,1,2,3
-//        oneway,com.android.internal.telephony.IPhoneStateListener,10,6
         int failCnt = 0;
         for (String line : lines) {
             if (line.startsWith(TARGET_PRE)) {
-                if (!doParseClass(line.substring(TARGET_PRE.length()), outPath, mode)) {
+                line = line.substring(TARGET_PRE.length());
+                int pos = line.indexOf(',');
+                if (!doParseClass(line.substring(pos+1), outPath, mode)) {
                     failCnt += 1;
                 }
             } else if (line.startsWith(ONEWAY_PRE)) {
-                if (!doParseClass(line.substring(ONEWAY_PRE.length()), outPath, mode)) {
+                line = line.substring(TARGET_PRE.length());
+                int pos = line.indexOf(',');
+                if (!doParseClass(line.substring(pos+1), outPath, mode)) {
                     failCnt += 1;
                 }
             }
@@ -90,7 +92,6 @@ public class ClassDumper {
             DumperWriter writer = new DumperWriter(pathName, className, os);
             TstClassPrinter.setCallback(writer);
 
-            writer.writeHeader();
             if (targetValues.isEmpty()) {
                 TstClassPrinter.printStub(items[0]);
             } else {
@@ -98,6 +99,12 @@ public class ClassDumper {
             }
             if (0 < writer.getCount()) {
                 writer.writeTailer();
+                return true;
+            }
+
+            DumperInfoWriter infoWriter = new DumperInfoWriter(os);
+            TstClassPrinter.printClass(items[0], true, infoWriter);
+            if (0 < infoWriter.getCount()) {
                 return true;
             }
         } catch (Throwable e) {
@@ -124,10 +131,14 @@ public class ClassDumper {
 
         public int getCount() { return mCount; }
 
-        public void writeHeader() throws Throwable {
-            mStream.write(("package " + mPathName + ";").getBytes());
-            mStream.write("\n\n".getBytes());
-            mStream.write(("interface " + mClassName + " {").getBytes());
+        public void writeHeader() {
+            try {
+                mStream.write(("package " + mPathName + ";").getBytes());
+                mStream.write("\n\n".getBytes());
+                mStream.write(("interface " + mClassName + " {").getBytes());
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
         }
 
         public void writeTailer() throws Throwable {
@@ -136,9 +147,34 @@ public class ClassDumper {
 
         @Override
         public void onTstClassPrinter(TstClassPrinter.TRANSACTION_Item item) {
+            if (mCount <= 0) {
+                writeHeader();
+            }
             mCount += 1;
             try {
                 mStream.write(("\n    " + item.funcName + ";// " + item.code).getBytes());
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    static class DumperInfoWriter implements TstClassPrinter.IClassInfoPrinter {
+        private int mCount = 0;
+        private final OutputStream mStream;
+
+        public DumperInfoWriter(OutputStream stream) {
+            mStream = stream;
+        }
+
+        public int getCount() { return mCount; }
+
+        @Override
+        public void onTstClassInfoPrinter(String line) {
+            mCount += 1;
+            try {
+                mStream.write("\n".getBytes());
+                mStream.write(line.getBytes());
             } catch (Throwable e) {
                 e.printStackTrace();
             }

@@ -4,6 +4,8 @@
 #include <ctype.h>
 #include <string.h>
 #include <unistd.h>
+#include <dlfcn.h>
+#include <sys/system_properties.h>
 #include "assembly.h"
 #include "fireyer_native.h"
 
@@ -300,6 +302,16 @@ static int svc_dir_list_name(const char* path, char** files, int count) {
     return index;
 }
 
+typedef int (*sys_prop_get_func_ptr)(const char *, char *);
+typedef void (*sys_prop_read_callback_func_ptr)(const prop_info* __pi,
+                                                void (*__callback)(void* __cookie, const char* __name, const char* __value, uint32_t __serial),
+                                                void* __cookie) ;
+
+static char sprop_val[PROP_VALUE_MAX];
+void prop_read_callback(void* cookie, const char* name, const char* value, uint32_t serial){
+    strncpy(sprop_val,value,PROP_VALUE_MAX);
+}
+
 jobject FireyerNative::handeJavaCall(JNIEnv* env, jclass thiz, jint jtype, jobject jobj) {
     jobject jret = NULL;
     switch (jtype) {
@@ -343,6 +355,60 @@ jobject FireyerNative::handeJavaCall(JNIEnv* env, jclass thiz, jint jtype, jobje
     {
 
     }   break;
+    case TYPE_GET_PROP_POPEN:
+    {
+        char* prop_name = jni_jstringTostring(env, (jstring)jobj);
+        char* command = NULL;
+        if(prop_name){
+            command = (char*)malloc(sizeof(char) * (strlen(prop_name) + 10));
+            if(command){
+                char buf[1128];
+                sprintf(command, "getprop %s", prop_name);
+                FILE * pFile = popen(command,"r");
+                if (fgets(buf,sizeof(buf),pFile)){
+                    jret = jni_stringTojstring(env,buf);
+                }
+            }
+        }
+        MEM_FREE(command)
+        MEM_FREE(prop_name)
+    } break;
+    case TYPE_GET_PROP_SPG:
+    {
+        char buf[1128]  = "";
+        char* prop_name = jni_jstringTostring(env, (jstring)jobj);
+        void* libc_handle = dlopen("libc.so",RTLD_LAZY);
+        sys_prop_get_func_ptr spg_fun = (sys_prop_get_func_ptr)dlsym(libc_handle, "__system_property_get");
+        if (prop_name && spg_fun){
+            spg_fun(prop_name,buf);
+            if (strlen(buf) > 0){
+                jret = jni_stringTojstring(env,buf);
+            }
+        }
+        MEM_FREE(prop_name)
+    } break;
+    case TYPE_GET_PROP_SPRC:
+    {
+        char* prop_name = jni_jstringTostring(env, (jstring)jobj);
+        const prop_info* pi = __system_property_find(prop_name);
+        if (pi != nullptr) {
+            if (android_get_device_api_level() >= 26){
+                void* libc_handle = dlopen("libc.so",RTLD_LAZY);
+                sys_prop_read_callback_func_ptr prc_fun = (sys_prop_read_callback_func_ptr)
+                        dlsym(libc_handle, "__system_property_read_callback");
+                char prop[PROP_VALUE_MAX] = {0};
+                sprop_val[0] = 0;
+                prc_fun(
+                        pi,prop_read_callback,
+                        prop);
+                if (strlen(sprop_val) > 0){
+                    strcpy(prop,sprop_val);
+                    jret = jni_stringTojstring(env,prop);
+                }
+            }
+        }
+        MEM_FREE(prop_name)
+        }break;
     default: break;
     }
     return jret;

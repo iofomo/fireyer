@@ -10,6 +10,9 @@ public final class FireyerNative {
     public static final int TYPE_GET_PROC   = 2;
     public static final int TYPE_FILE_LIST  = 3;
     public static final int TYPE_GET_STACK  = 4;
+    public static final int TYPE_GET_PROP_POPEN   = 5;
+    public static final int TYPE_GET_PROP_SPG     = 6;
+    public static final int TYPE_GET_PROP_SPRC     = 7;
 
     static {
         try {
